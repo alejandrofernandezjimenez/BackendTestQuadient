@@ -1,7 +1,7 @@
 package es.testquadient.controller;
 
 import es.testquadient.service.InspireService;
-import jakarta.annotation.Resource;
+import org.springframework.core.io.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
