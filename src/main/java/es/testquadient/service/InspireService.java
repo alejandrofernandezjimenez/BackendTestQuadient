@@ -1,6 +1,7 @@
 package es.testquadient.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.util.Arrays;
@@ -8,38 +9,41 @@ import java.util.Arrays;
 @Service
 public class InspireService {
 
-    public String ejecutarInspire() {
-        String userHome = System.getProperty("user.home");
-        String wfd = userHome + "\\Downloads\\PRACTICAS\\Vital_SalesBaseTemplate.wfd";
-        String json = userHome + "\\Downloads\\PRACTICAS\\testInput.json";
-        String output = userHome + "\\Downloads\\Output1.pdf";
-
-        // Buscar la ruta que contiene "Inspire Designer" en el PATH
-        String path = System.getenv("PATH");
-        String[] rutas = path.split(";");
-        String rutaInspireCLI = Arrays.stream(rutas)
-                .filter(r -> r.contains("Inspire Designer"))
-                .findFirst()
-                .map(r -> r + "\\InspireCLI.exe")
-                .orElse(null);
-
-        if (rutaInspireCLI == null || !new File(rutaInspireCLI).exists()) {
-            return "⚠️ No se encontró InspireCLI en el PATH del sistema (¿falta Inspire Designer en el PATH?).";
-        }
-
-        ProcessBuilder builder = new ProcessBuilder(
-                rutaInspireCLI,
-                wfd,
-                "-e", "PDF",
-                "-difData", json,
-                "-f", output
-        );
-
-        builder.redirectErrorStream(true);
-
+    public String ejecutarInspireConArchivo(MultipartFile archivo) {
         try {
-            System.out.println("🛠️ Ejecutando: " + String.join(" ", builder.command()));
+            String userHome = System.getProperty("user.home");
+            String wfd = userHome + "\\Downloads\\PRACTICAS\\Vital_SalesBaseTemplate.wfd";
+            String jsonPath = userHome + "\\Downloads\\input_dinamico.json";
+            String output = userHome + "\\Downloads\\Output1.pdf";
 
+            // Guardar el archivo JSON que se ha recibido
+            File destino = new File(jsonPath);
+            archivo.transferTo(destino);
+
+            // Buscar la ruta del InspireCLI.exe en el PATH del sistema
+            String path = System.getenv("PATH");
+            String[] rutas = path.split(";");
+            String rutaInspireCLI = Arrays.stream(rutas)
+                    .filter(r -> r.contains("Inspire Designer"))
+                    .findFirst()
+                    .map(r -> r + "\\InspireCLI.exe")
+                    .orElse(null);
+
+            if (rutaInspireCLI == null || !new File(rutaInspireCLI).exists()) {
+                return "⚠️ No se encontró InspireCLI en el PATH del sistema.";
+            }
+
+            // Construir el comando
+            ProcessBuilder builder = new ProcessBuilder(
+                    rutaInspireCLI,
+                    wfd,
+                    "-e", "PDF",
+                    "-difData", jsonPath,
+                    "-f", output
+            );
+            builder.redirectErrorStream(true);
+
+            // Ejecutar el comando
             Process proceso = builder.start();
             StringBuilder salida = new StringBuilder();
             BufferedReader reader = new BufferedReader(new InputStreamReader(proceso.getInputStream()));
